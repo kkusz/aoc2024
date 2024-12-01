@@ -1,0 +1,124 @@
+         IDENTIFICATION DIVISION.
+         PROGRAM-ID. DAY01P1.
+            
+         ENVIRONMENT DIVISION. 
+
+         INPUT-OUTPUT SECTION. 
+         FILE-CONTROL.
+            SELECT INPUT-FILE ASSIGN TO INPFILE
+            ORGANIZATION IS LINE SEQUENTIAL.
+
+            SELECT NUMBERS-LEFT ASSIGN TO NUMLEFT
+            ORGANIZATION IS LINE SEQUENTIAL. 
+
+            SELECT NUMBERS-RIGHT ASSIGN TO NUMRIGHT
+            ORGANIZATION IS LINE SEQUENTIAL. 
+
+            SELECT SORT-WORK-FILE ASSIGN TO WRKFILE
+            ORGANIZATION IS LINE SEQUENTIAL.
+
+            SELECT SORTED-LEFT ASSIGN TO SORTLEFT
+            ORGANIZATION IS LINE SEQUENTIAL. 
+
+            SELECT SORTED-RIGHT ASSIGN TO SORTRIGHT
+            ORGANIZATION IS LINE SEQUENTIAL. 
+            
+         DATA DIVISION.
+         FILE SECTION. 
+         FD INPUT-FILE.
+         01 INPUT-RECORD.
+            88 INPUT-END            VALUE LOW-VALUE.
+            05 INPUT-TEXT           PIC X(80).
+
+         FD NUMBERS-LEFT.
+         01 LEFT-RECORD.
+            05 NUMLEFT-TEXT         PIC 9(5).
+
+         FD NUMBERS-RIGHT.
+         01 RIGHT-RECORD.
+            05 NUMRIGHT-TEXT        PIC 9(5).
+
+         SD SORT-WORK-FILE.
+         01 SORT-WORK-RECORD.
+            05 NUMWORK-TEXT         PIC 9(5).
+
+         FD SORTED-LEFT.
+         01 SLEFT-RECORD.
+            88 SORTLEFT-END         VALUE LOW-VALUE.
+            05 SORTLEFT-TEXT        PIC 9(5).
+
+         FD SORTED-RIGHT.
+         01 SRIGHT-RECORD.
+            88 SORTRIGHT-END        VALUE LOW-VALUE.
+            05 SORTRIGHT-TEXT       PIC 9(5).
+         WORKING-STORAGE SECTION.
+
+
+         01 WS-SUM              PIC 9(10) VALUE 0.
+
+         01 WS-DISTANCE         PIC 9(10).
+            
+         PROCEDURE DIVISION.
+            PERFORM INIT
+
+            OPEN INPUT SORTED-LEFT
+            OPEN INPUT SORTED-RIGHT
+
+            READ SORTED-LEFT
+               AT END SET SORTLEFT-END TO TRUE
+            END-READ
+
+            READ SORTED-RIGHT
+               AT END SET SORTRIGHT-END TO TRUE
+            END-READ
+
+            PERFORM UNTIL SORTLEFT-END OR SORTRIGHT-END
+               COMPUTE WS-DISTANCE = SORTRIGHT-TEXT - SORTLEFT-TEXT
+               ADD WS-DISTANCE TO WS-SUM
+               READ SORTED-LEFT
+                  AT END SET SORTLEFT-END TO TRUE
+               END-READ
+   
+               READ SORTED-RIGHT
+                  AT END SET SORTRIGHT-END TO TRUE
+               END-READ
+            END-PERFORM
+
+            CLOSE SORTED-LEFT 
+            CLOSE SORTED-RIGHT
+
+            DISPLAY WS-SUM
+
+            STOP RUN.
+
+         INIT SECTION.
+           OPEN INPUT INPUT-FILE
+           OPEN OUTPUT NUMBERS-LEFT
+           OPEN OUTPUT NUMBERS-RIGHT
+           READ INPUT-FILE
+               AT END SET INPUT-END TO TRUE
+           END-READ
+
+           PERFORM UNTIL INPUT-END
+               UNSTRING INPUT-TEXT DELIMITED BY ALL SPACES
+                   INTO NUMLEFT-TEXT, NUMRIGHT-TEXT 
+               WRITE LEFT-RECORD
+               WRITE RIGHT-RECORD
+               READ INPUT-FILE
+                  AT END SET INPUT-END TO TRUE
+               END-READ
+           END-PERFORM
+           CLOSE INPUT-FILE
+           CLOSE NUMBERS-LEFT 
+           CLOSE NUMBERS-RIGHT
+
+           SORT SORT-WORK-FILE
+             ON ASCENDING KEY NUMWORK-TEXT
+             USING  NUMBERS-LEFT
+             GIVING SORTED-LEFT
+
+           SORT SORT-WORK-FILE
+             ON ASCENDING KEY NUMWORK-TEXT
+             USING  NUMBERS-RIGHT
+             GIVING SORTED-RIGHT
+           .
